@@ -1,0 +1,31 @@
+name: Reusable Test Workflow
+
+on:
+  workflow_call: 
+    inputs:
+      service:
+        required: true
+        type: string
+      node-version:
+        required: true
+        type: string
+    outputs:
+      execution-time:
+        description: "Czas przekazany dalej z composite action"
+        value: ${{ jobs.run-test-job.outputs.job-duration }}
+
+jobs:
+  run-test-job:
+    runs-on: ubuntu-latest
+    outputs:
+      job-duration: ${{ steps.local-action.outputs.duration }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Execute Composite Action
+        id: local-action
+        uses: ./.github/actions/node-test
+        with:
+          service: ${{ inputs.service }}
+          node-version: ${{ inputs.node-version }}

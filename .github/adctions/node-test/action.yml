@@ -1,0 +1,41 @@
+name: 'Node Service Test'
+description: 'Instaluje zaleznosci, uruchamia testy i zwraca czas trwania'
+
+inputs:
+  service:
+    description: 'Nazwa katalogu serwisu (np. web, api)'
+    required: true
+  node-version:
+    description: 'Wersja Node.js'
+    required: true
+
+outputs:
+  duration:
+    description: 'Czas trwania testow'
+    value: ${{ steps.run-tests.outputs.duration }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ./services/${{ inputs.service }}/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+      shell: bash 
+      working-directory: ./services/${{ inputs.service }}
+
+    - name: Run tests and measure time
+      id: run-tests
+      run: |
+        START_TIME=$SECONDS
+        npm test
+        END_TIME=$SECONDS
+        DURATION=$((END_TIME - START_TIME))
+        echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
+      shell: bash
+      working-directory: ./services/${{ inputs.service }}

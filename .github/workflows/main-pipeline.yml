@@ -1,0 +1,28 @@
+name: Main Caller Pipeline
+
+on:
+  push:
+    branches:
+      - master 
+
+jobs:
+  test-web:
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      service: 'web'
+      node-version: '20'
+
+  test-api:
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      service: 'api'
+      node-version: '22'
+
+  print-summary:
+    needs: [test-web, test-api]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display Collected Outputs
+        run: |
+          echo "Czas trwania testow WEB: ${{ needs.test-web.outputs.execution-time }}"
+          echo "Czas trwania testow API: ${{ needs.test-api.outputs.execution-time }}"
