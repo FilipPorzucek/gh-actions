@@ -1,0 +1,55 @@
+name: Path Filtering and Concurrency
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+    steps:
+      - name: Checkout repository 
+        uses: actions/checkout@v4
+
+      - name: Check for file changes 
+        id: filter
+        uses: dorny/paths-filter@v3
+        with: 
+          filters: |
+            web:
+              - 'services/web/**'
+            api:
+              - 'services/api/**'
+
+  build-web:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install and Build Web
+        run: |
+          echo "Zmiany w web wykryte. Uruchamiam budowanie..."
+
+  test-api:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.api == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install and Test API
+        run: |
+          echo "Zmiany w api wykryte. Uruchamiam testy..."
